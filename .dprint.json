@@ -1,0 +1,14 @@
+{
+  "typescript": {},
+  "includes": [
+    "**/*.{ts,tsx,js,jsx,mjs,json,cjs}"
+  ],
+  "excludes": [
+    "**/node_modules",
+    "**/*-lock.json"
+  ],
+  "plugins": [
+    "https://plugins.dprint.dev/typescript-0.83.0.wasm",
+    "https://plugins.dprint.dev/json-0.17.0.wasm"
+  ]
+}
