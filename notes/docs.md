@@ -31,8 +31,8 @@ Build an X Clone (scaled down):
   no `node_modules`, so LSPs are compromised for library definitions, but
   the pnp functionality makes the project lighter.
 - The DB used is `MongoDB @ 7.0.3` with `Mongosh @ 2.0.2`. The DB names are:
-  - `tweet-api` @ `mongodb://0.0.0.0:27017/tweet-api`
-  - `tweet-api-test` @ `mongodb://0.0.0.0:27017/tweet-api-test`
+  - `x-api` @ `mongodb://0.0.0.0:27017/x-api`
+  - `x-api-test` @ `mongodb://0.0.0.0:27017/x-api-test`
 
 ---
 
@@ -172,6 +172,11 @@ const tweetSchema = new mongoose.Schema(
       required: true,
       ref: "User",
     },
+    username: {
+      type: String,
+      required: true,
+      ref: "User",
+    },
     content: {
       type: String,
       trim: true,
@@ -195,7 +200,8 @@ const tweetSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-export const Tweet = mongoose.model("Tweet", tweetSchema);
+const Tweet = mongoose.model("Tweet", tweetSchema);
+export default Tweet;
 ```
 
 The user model will be as defined here:
@@ -348,3 +354,496 @@ and finally, add an export statement at the bottom
 ```javascript
 export const User = mongoose.model("User", userSchema);
 ```
+
+(v) Create middleware for authorization.
+
+Create a file `middleware/auth.js` that handles user authroization using JWT tokens
+
+```javascript
+// middleware/auth.js
+
+import jwt from "jsonwebtoken";
+import { User } from "../models/user.model.js";
+
+const authMiddle = async function (req, res, next) {
+  try {
+    // Remove the `Bearer` from the Authorization header
+    const token = req.header("Authorization").replace("Bearer ", "");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({
+      _id: decoded._id,
+      "tokens.token": token,
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // Add a token and a user field to the request, to be used by the server
+    req.token = token;
+    req.user = user;
+    next();
+  } catch (e) {
+    res.status(401).send({ error: "Authorization Failed" });
+  }
+};
+
+export default authMiddle;
+```
+
+(vi) Create routers for the server. Start by making `routers/
+user.router.js` and `routers/tweet.router.js`
+
+First we work with the tweet routes. Import all the tweet model and the
+authorization middleware, and initialise a new express router:
+
+```javascript
+// routers/tweet.router.js
+
+import express from "express";
+import authMiddle from "../middleware/auth.js";
+import Tweet from "../models/tweet.model.js";
+
+const tweetRouter = new express.Router();
+```
+
+Now in accordance with CRUD, define POST, GET, PATCH and DELETE operations
+
+- POST
+
+How to use:
+
+Under {{url}}/tweets, send a request body with the following content
+
+```javascript
+{
+    content: ...,
+    pictures: ...,
+    vidoes: ...
+}
+```
+
+ensure that an authorization header is sent with the appropriate Bearer token
+
+```javascript
+/**
+ * Add a new tweet to the database
+ * We do not store a username with the tweet, but instead
+ * choose to fetch the username when tweets are called
+ */
+
+tweetRouter.post("/tweets", authMiddle, async function (req, res) {
+  // Add an author  and username attribute to the request to complete the tweet schema requirements
+  const tweet = new Tweet({
+    ...req.body,
+    author: req.user._id,
+    username: req.user.username,
+  });
+
+  try {
+    await tweet.save();
+    res.status(201).send(tweet);
+  } catch (e) {
+    res.status(400).send({ error: "Malformed request" });
+  }
+});
+```
+
+- GET
+
+How to use:
+Use the URL: {{url}}/tweets?sortBy=parts[0]:parts[1]&limit={}&skip={}&username={}
+
+```javascript
+tweetRouter.get("/tweets", async function (req, res) {
+  const sort = {};
+
+  if (req.query.sortBy) {
+    // req.query would have /tweets?sortBy=parts[0]:parts[1]...
+    const parts = req.query.sortBy.split(":");
+    // Not dot notation because parts[0] needs to be dynamically computed
+    sort[parts[0]] = parts[1] === "desc" ? -1 : 1;
+  } else {
+    sort.createdAt = -1;
+  }
+
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = parseInt(req.query.skip) || 0;
+
+  try {
+    if (req.query.username) {
+      const tweets = await Tweet.find({ username: req.query.username })
+        .sort(sort)
+        .limit(limit)
+        .skip(skip)
+        .exec();
+      res.status(200).send(tweets);
+    } else {
+      const tweets = await Tweet.find({})
+        .sort(sort)
+        .limit(limit)
+        .skip(skip)
+        .exec();
+      res.status(200).send(tweets);
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+How to use:
+Use the URL: {{url}}/tweets/:id
+
+```javascript
+tweetRouter.get("/tweets/:id", async function (req, res) {
+  const _id = req.params.id;
+
+  try {
+    const tweet = await Tweet.findOne({ _id });
+    if (!tweet) {
+      return res.status(404).send({ error: "Tweet not found" });
+    }
+    res.status(200).send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+- PATCH
+
+How to use:
+Use the URL: {{url}}/tweets/:id
+Ensure authorization with a bearer token and send a request body as:
+
+```javascript
+{
+    content: ...
+    pictures: ...
+    videos: ...
+}
+```
+
+```javascript
+tweetRouter.patch("/tweets/:id", authMiddle, async function (req, res) {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["content", "pictures", "videos"];
+  const isValidOperation = updates.every(function (update) {
+    return allowedUpdates.includes(update);
+  });
+
+  if (!isValidOperation) {
+    res.status(400).send({ error: "Attempt to update invalid fields" });
+  }
+
+  try {
+    const tweet = await Tweet.findOne({
+      _id: req.params.id,
+      author: req.user._id,
+      username: req.user.username,
+    });
+    if (!tweet) {
+      return res.status(404).send({ error: "Tweet not found" });
+    }
+    updates.forEach(function (update) {
+      tweet[update] = req.body[update];
+    });
+    await tweet.save();
+    res.status(200).send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+- DELETE
+
+How to use:
+Use the URL: {{url}}/tweets/:id
+Ensure sufficient authorization
+
+```javascript
+tweetRouter.delete("/tweets/:id", authMiddle, async function (req, res) {
+  try {
+    const tweet = await Tweet.findOneAndDelete({
+      _id: req.params.id,
+      author: req.user._id,
+      username: req.user.username,
+    });
+
+    if (!tweet) {
+      return res.status(404).send({ error: "Tweet not found" });
+    }
+    res.send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+Make sure to export the tweetRouter
+
+Next we work with the user routes: In `user.router.js` follow the same
+initialization steps as shown previously
+
+```javascript
+import express from "express";
+import authMiddle from "../middleware/auth.js";
+import User from "../models/user.model.js";
+
+const userRouter = new express.Router();
+```
+
+- POST
+
+How to use:
+Use the URL {{url}}/users.
+Ensure the request has a body of the type:
+
+```json
+{
+    username: ...
+    password: ...
+    email: ... }
+```
+
+```javascript
+userRouter.post("/users", async function (req, res) {
+  // Obtain the new user information from the request
+  const user = new User(req.body);
+  try {
+    // Try saving the user information, pre-event hook on save
+    // will also trigger hashing the password
+    await user.save();
+    // Generate a JWT token for the user. It also additionally
+    // modifies the tokens array for this user ('this')
+    const token = await user.generateAuthToken();
+    res.status(201).send({ user, token });
+  } catch (e) {
+    // Error messages are handled by the statics/methods
+    res.status(400).send();
+  }
+});
+```
+
+How to use:
+Use the URL: {{url}}/users/logout.
+Ensure sufficient authorization
+
+```javascript
+userRouter.post("/users/logout", authMiddle, async function (req, res) {
+  try {
+    // Remove only the token that was used to login
+    req.user.tokens = req.user.tokens.filter(function (token) {
+      return token.token !== req.token;
+    });
+    await req.user.save();
+    res.status(200).send();
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Internal server error");
+  }
+});
+```
+
+How to use:
+Use the URL: {{url}}/users/logoutAll
+Ensure sufficient authorization
+
+```javascript
+userRouter.post("/users/logoutAll", authMiddle, async function (req, res) {
+  try {
+    // Set the tokens array to an empty one
+    req.user.tokens = [];
+    await req.user.save();
+    res.status(200).send();
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Internal server error");
+  }
+});
+```
+
+How to use:
+Use the{{url}}/users/login
+Ensure the request has a body of the type:
+
+```json
+{
+    username: ...
+    password: ...
+}
+```
+
+```javascript
+userRouter.post("/users/login", async function (req, res) {
+  try {
+    const user = await User.findByCredentials(
+      req.body.username,
+      req.body.password,
+    );
+    // Generate a JWT token for the user. It also additionally
+    // modifies the tokens array for this user ('this')
+    const token = await user.generateAuthToken();
+    res.status(200).send({ user, token });
+  } catch (e) {
+    res.status(400).send();
+  }
+});
+```
+
+- GET
+
+How to use:
+Use the URL: {{url}}/users/me
+Ensure sufficient authorization
+
+```javascript
+userRouter.get("/users/me", authMiddle, async function (req, res) {
+  // After authMiddle, res.user uses the toJSON method which was
+  // modified to remove sensitive information
+  res.status(200).send(req.user);
+});
+```
+
+How to use:
+Use the URL: {{url}}/users/:id/avatar
+
+```javascript
+userRouter.get("/users/:id/avatar", async function (req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user || !user.avatar) {
+      throw new Error();
+    } else {
+      res.status(200).send(user.avatar);
+    }
+  } catch (e) {
+    res.status(404).send();
+  }
+});
+```
+
+- PATCH
+
+How to use:
+Use the URL: {{url}}/users/me
+Ensure sufficient authorization. Make sure the request body contains the following (all optional)
+
+```json
+{
+    username: ...
+    passowrd: ...
+    email: ...
+}
+```
+
+```javascript
+userRouter.patch("/users/me", authMiddle, async function (req, res) {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["username", "password", "email", "avatar"];
+  const isValidOperation = updates.every(function (update) {
+    return allowedUpdates.includes(update);
+  });
+
+  if (!isValidOperation) {
+    res.status(400).send({ error: "Attempt to update invalid fields" });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    if (updates.includes("username")) {
+      const tweets = await Tweet.find({ author: req.user._id });
+      tweets.forEach(async function (tweet) {
+        tweet.username = req.body.username;
+        await tweet.save();
+      });
+    }
+
+    updates.forEach(function (update) {
+      user[update] = req.body[update];
+    });
+
+    await user.save();
+    res.status(200).send(user);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+- DELETE
+
+How to use:
+Use the URL: {{url}}/users/me
+Ensure sufficient authorization
+
+```javascript
+userRouter.delete("/users/me", authMiddle, async function (req, res) {
+  try {
+    await req.user.remove();
+    res.status(200).send(req.user);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+How to use:
+Use the URL: {{url}}/users/me/avatar
+Ensure sufficient authorization
+
+```javascript
+userRouter.delete("/users/me/avatar", authMiddle, async function (req, res) {
+  try {
+    req.user.avatar = undefined;
+    await req.user.save();
+    res.status(200).send({ message: "Profile picture removed" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+Again, make sure to export the userRouter
+
+(vii) Take in the routers and enable them to be used by the server:
+
+```javascript
+// app.js
+
+import express from "express";
+
+import "./db/connection.js";
+import tweetRouter from "./routers/tweet.router.js";
+import userRouter from "./routers/user.router.js";
+
+const app = express();
+
+app.use(express.json());
+app.use(userRouter);
+app.use(tweetRouter);
+
+export default app;
+```
+
+The sever is not equipped in theory. We proceed to use a software like postman
+to test every route and report any possible errors:
+
+No errors were found. All routes work as expected.
+
+---
+
+### Implementing OAuth using `passport.js`

@@ -7,6 +7,11 @@ const tweetSchema = new mongoose.Schema(
       required: true,
       ref: "User",
     },
+    username: {
+      type: String,
+      required: true,
+      ref: "User",
+    },
     content: {
       type: String,
       trim: true,
@@ -30,4 +35,5 @@ const tweetSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-export const Tweet = mongoose.model("Tweet", tweetSchema);
+const Tweet = mongoose.model("Tweet", tweetSchema);
+export default Tweet;

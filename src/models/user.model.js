@@ -43,19 +43,19 @@ const userSchema = new mongoose.Schema(
 // Validation logic
 
 // (1) Prevent password "password"
-userSchema.path("password").validate(function (val) {
+userSchema.path("password").validate(function(val) {
   return !val.toLowerCase().includes("password");
 }, "Please use a stronger password");
 
 // (2) Ensure a valid email address is entered
-userSchema.path("email").validate(function (val) {
+userSchema.path("email").validate(function(val) {
   return validator.isEmail(val);
 }, "Email is invalid");
 
 // Pre-event hooks
 
 // (1) Hash passwords before event "save"
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function(next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 8); // Store hashed passwords in the DB on modification or new creation
   }
@@ -63,7 +63,7 @@ userSchema.pre("save", async function (next) {
 });
 
 // (2) Cascade tweets before event "delete"
-userSchema.pre("remove", async function (next) {
+userSchema.pre("remove", async function(next) {
   await Tweet.deleteMany({ author: this._id });
   next();
 });
@@ -80,7 +80,7 @@ userSchema.virtual("tweets", {
 // Document specific methods
 
 // (1) Generate an authentication token for a specific user
-userSchema.methods.generateAuthToken = async function () {
+userSchema.methods.generateAuthToken = async function() {
   const token = jwt.sign({ _id: this._id.toString() }, process.env.JWT_SECRET);
   this.tokens = this.tokens.concat({ token }); // Store all tokens in an array to enable login on multiple devices
   await this.save();
@@ -89,13 +89,12 @@ userSchema.methods.generateAuthToken = async function () {
 };
 
 // (2) Ensure API response does not contain sensitive information
-userSchema.methods.toJSON = function () {
+userSchema.methods.toJSON = function() {
   const userObject = this.toObject();
 
   // Delete the following sensitive fields
   delete userObject.password;
   delete userObject.tokens;
-  delete userObject.avatar;
 
   return userObject;
 };
@@ -103,7 +102,7 @@ userSchema.methods.toJSON = function () {
 // Statics (Model specific)
 
 // (1) Query the collection to find a user by their credentials, presumably entered by the client
-userSchema.statics.findByCredentials = async function (username, password) {
+userSchema.statics.findByCredentials = async function(username, password) {
   const user = await User.findOne({ username });
 
   if (!user) {
@@ -119,4 +118,6 @@ userSchema.statics.findByCredentials = async function (username, password) {
   return user;
 };
 
-export const User = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+
+export default User;
