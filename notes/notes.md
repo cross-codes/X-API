@@ -880,4 +880,5 @@ IP Addresses to be able to access the database.
 
 You can view your collections as shown below:
 
-[Successfully created tweet](./img/atlas_success.png)
+![Successfully created tweet](./img/atlas_success.png)
+![Successfully created image](./img/atlas_success_2.png)
