@@ -31,7 +31,7 @@ Build an X Clone (scaled down):
   no `node_modules`, so LSPs are compromised for library definitions, but
   the pnp functionality makes the project lighter.
 - The DB used is `MongoDB @ 7.0.3` with `Mongosh @ 2.0.2`.
-The DB names used during development are docker containers:
+  The DB names used during development are docker containers:
   - `x-api` @ `mongodb://0.0.0.0:27017/x-api`
   - `x-api-test` @ `mongodb://0.0.0.0:27017/x-api-test`
 
@@ -489,7 +489,6 @@ tweetRouter.get("/tweets", async function (req, res) {
 });
 ```
 
-
 Use the URL: `{{url}}/tweets/:id`
 
 ```javascript
@@ -585,7 +584,7 @@ tweetRouter.delete("/tweets/:id", authMiddle, async function (req, res) {
 
 Make sure to export the tweetRouter.
 
-Next we work with the user routes: 
+Next we work with the user routes:
 
 In `user.router.js` follow the same
 initialization steps as shown previously
@@ -607,7 +606,7 @@ Ensure the request has a body of the type:
 {
     "username": "...",
     "password": "...",
-    "email": "..." 
+    "email": "..."
 }
 ```
 
@@ -858,11 +857,11 @@ project uses mongoose (which has it's own implementation of the native
 MongoDB driver), we only need the URI to replace in the `.env` file:
 
 ```bash
-mongodb+srv://Cross:<password>@x-api.6qbwngu.mongodb.net/?retryWrites=true&w=majority
+mongodb+srv://<username>:<password>@<project-name>.<cluster-id>.mongodb.net/?retryWrites=true&w=majority
 ```
 
-Replace password with the appropriate password in the user creation process (or
-search/update it in `Database Access`)
+Replace `<*>` fields with the appropriate entries from the user creation
+process (or search/update it in `Database Access`)
 
 Once deployed, start the server and create two users and a tweet via `Postman`
 verify the updates
