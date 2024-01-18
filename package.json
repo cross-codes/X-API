@@ -9,7 +9,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "serverDev": "node --watch src/index.js",
+    "websiteDev": "http-server"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,5 +19,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.4",
     "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
   }
 }
