@@ -118,7 +118,7 @@ const opts = {
 
 mongoose.connect(process.env.MONGODB_URI, opts);
 
-mongoose.connection.on("error", (err) => {
+mongoose.connection.on("error", function (err) {
   console.error(`\x1b[31m\x1b[1mMongoDB connection error: ${err}\x1b[0m`);
 });
 ```
@@ -150,7 +150,7 @@ import app from "./app.js";
 
 const port = process.env.PORT || 3000;
 
-app.listen(port, (err) => {
+app.listen(port, function (err) {
   if (err) console.error(err);
   console.log(`Server is up on port: ${port}`);
 });
@@ -846,4 +846,38 @@ No errors were found. All routes work as expected.
 
 ---
 
-### Implementing OAuth using `passport.js`
+### Deploying the API
+
+Before implementing OAuth, we will first deploy the API online
+For OAuth, it is best if we have a basic front end, so hosting the API online
+is an effective way of doing this
+
+(i) Making a DB on MongoDB Atlas
+
+Create a new project in your account (say `X-API`) and deploy a new
+M0 cluster with your current IP. Make sure there is one superuser with credentials.
+
+Then connect to your instance using the NodeJS MongoDB driver ; since the
+project uses mongoose (which has it's own implementation of the native
+MongoDB driver), we only need the URI to replace in the `.env` file:
+
+```env
+mongodb+srv://Cross:<password>@x-api.6qbwngu.mongodb.net/?retryWrites=true&w=majority
+```
+
+Replace password with the appropriate password in the user creation process (or
+search/update it in `Database Access`)
+
+Once deployed, start the server and create two users and a tweet via `Postman`
+verify the updates
+
+```bash
+yarn run start
+```
+
+**Note**: If there is an error on accessing the DB, consider whitelisting ALL
+IP Addresses to be able to access the database.
+
+You can view your collections as shown below:
+
+[Successfully created tweet](./img/atlas_success.png)
