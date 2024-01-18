@@ -423,12 +423,6 @@ Under `{{url}}/tweets`, send a request body with the following content
 ensure that an authorization header is sent with the appropriate Bearer token
 
 ```javascript
-/**
- * Add a new tweet to the database
- * We do not store a username with the tweet, but instead
- * choose to fetch the username when tweets are called
- */
-
 tweetRouter.post("/tweets", authMiddle, async function (req, res) {
   // Add an author  and username attribute to the request to complete the tweet schema requirements
   const tweet = new Tweet({

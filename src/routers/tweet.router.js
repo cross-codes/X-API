@@ -8,8 +8,6 @@ const tweetRouter = new express.Router();
 
 /**
  * Add a new tweet to the database
- * We do not store a username with the tweet, but instead
- * choose to fetch the username when tweets are called
  */
 
 // Status: Working as intended
