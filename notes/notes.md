@@ -30,7 +30,8 @@ Build an X Clone (scaled down):
 - The packages are managed using corepack enabled `Yarn v4`. There are
   no `node_modules`, so LSPs are compromised for library definitions, but
   the pnp functionality makes the project lighter.
-- The DB used is `MongoDB @ 7.0.3` with `Mongosh @ 2.0.2`. The DB names are:
+- The DB used is `MongoDB @ 7.0.3` with `Mongosh @ 2.0.2`.
+The DB names used during development are docker containers:
   - `x-api` @ `mongodb://0.0.0.0:27017/x-api`
   - `x-api-test` @ `mongodb://0.0.0.0:27017/x-api-test`
 
@@ -58,23 +59,22 @@ yarn config set enableGlobalCache false
 with the `src/` and `.github/` folders, and modify the package.json file with
 optional fields.
 
-```json
+```JSON
 {
-  "name": ...,
-  "version": ...,
+  "name": "...",
+  "version": "...",
   "packageManager": "yarn@4.0.2",
-  "description": ...,
-  "author": ...,
-  "private": ...,
-  "license": ...,
+  "description": "...",
+  "author": "...",
+  "private": "...",
+  "license": "...",
   "type": "module",
   "scripts": {
-    "start": ...,
-    "dev": ...,
-    ...
+    "start": "...",
+    "serverDev": "...",
+    "websiteDev": "...",
   },
   "dependencies": {
-      ...
   }
 }
 ```
@@ -410,15 +410,13 @@ Now in accordance with CRUD, define POST, GET, PATCH and DELETE operations
 
 - POST
 
-How to use:
+Under `{{url}}/tweets`, send a request body with the following content
 
-Under {{url}}/tweets, send a request body with the following content
-
-```javascript
+```JSON
 {
-    content: ...,
-    pictures: ...,
-    vidoes: ...
+    "content": "...",
+    "pictures": "...",
+    "videos": "..."
 }
 ```
 
@@ -450,8 +448,7 @@ tweetRouter.post("/tweets", authMiddle, async function (req, res) {
 
 - GET
 
-How to use:
-Use the URL: {{url}}/tweets?sortBy=parts[0]:parts[1]&limit={}&skip={}&username={}
+Use the URL: `{{url}}/tweets?sortBy=parts[0]:parts[1]&limit={}&skip={}&username={}`
 
 ```javascript
 tweetRouter.get("/tweets", async function (req, res) {
@@ -492,8 +489,8 @@ tweetRouter.get("/tweets", async function (req, res) {
 });
 ```
 
-How to use:
-Use the URL: {{url}}/tweets/:id
+
+Use the URL: `{{url}}/tweets/:id`
 
 ```javascript
 tweetRouter.get("/tweets/:id", async function (req, res) {
@@ -514,15 +511,16 @@ tweetRouter.get("/tweets/:id", async function (req, res) {
 
 - PATCH
 
-How to use:
-Use the URL: {{url}}/tweets/:id
-Ensure authorization with a bearer token and send a request body as:
+Use the URL: `{{url}}/tweets/:id`
 
-```javascript
+Ensure that an authorization header is sent with the appropriate Bearer token.
+Your request body should look like:
+
+```JSON
 {
-    content: ...
-    pictures: ...
-    videos: ...
+    "content": "...",
+    "pictures": "...",
+    "videos": "..."
 }
 ```
 
@@ -561,9 +559,9 @@ tweetRouter.patch("/tweets/:id", authMiddle, async function (req, res) {
 
 - DELETE
 
-How to use:
-Use the URL: {{url}}/tweets/:id
-Ensure sufficient authorization
+Use the URL: `{{url}}/tweets/:id`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
 
 ```javascript
 tweetRouter.delete("/tweets/:id", authMiddle, async function (req, res) {
@@ -585,9 +583,11 @@ tweetRouter.delete("/tweets/:id", authMiddle, async function (req, res) {
 });
 ```
 
-Make sure to export the tweetRouter
+Make sure to export the tweetRouter.
 
-Next we work with the user routes: In `user.router.js` follow the same
+Next we work with the user routes: 
+
+In `user.router.js` follow the same
 initialization steps as shown previously
 
 ```javascript
@@ -600,15 +600,15 @@ const userRouter = new express.Router();
 
 - POST
 
-How to use:
-Use the URL {{url}}/users.
+Use the URL `{{url}}/users`
 Ensure the request has a body of the type:
 
-```json
+```JSON
 {
-    username: ...
-    password: ...
-    email: ... }
+    "username": "...",
+    "password": "...",
+    "email": "..." 
+}
 ```
 
 ```javascript
@@ -630,9 +630,9 @@ userRouter.post("/users", async function (req, res) {
 });
 ```
 
-How to use:
-Use the URL: {{url}}/users/logout.
-Ensure sufficient authorization
+Use the URL: `{{url}}/users/logout`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
 
 ```javascript
 userRouter.post("/users/logout", authMiddle, async function (req, res) {
@@ -650,9 +650,9 @@ userRouter.post("/users/logout", authMiddle, async function (req, res) {
 });
 ```
 
-How to use:
-Use the URL: {{url}}/users/logoutAll
-Ensure sufficient authorization
+Use the URL: `{{url}}/users/logoutAll`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
 
 ```javascript
 userRouter.post("/users/logoutAll", authMiddle, async function (req, res) {
@@ -668,14 +668,14 @@ userRouter.post("/users/logoutAll", authMiddle, async function (req, res) {
 });
 ```
 
-How to use:
-Use the{{url}}/users/login
+Use the URL: `{{url}}/users/login`
+
 Ensure the request has a body of the type:
 
-```json
+```JSON
 {
-    username: ...
-    password: ...
+    "username": "...",
+    "password": "..."
 }
 ```
 
@@ -698,9 +698,9 @@ userRouter.post("/users/login", async function (req, res) {
 
 - GET
 
-How to use:
-Use the URL: {{url}}/users/me
-Ensure sufficient authorization
+Use the URL: `{{url}}/users/me`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
 
 ```javascript
 userRouter.get("/users/me", authMiddle, async function (req, res) {
@@ -710,8 +710,7 @@ userRouter.get("/users/me", authMiddle, async function (req, res) {
 });
 ```
 
-How to use:
-Use the URL: {{url}}/users/:id/avatar
+Use the URL: `{{url}}/users/:id/avatar`
 
 ```javascript
 userRouter.get("/users/:id/avatar", async function (req, res) {
@@ -731,15 +730,15 @@ userRouter.get("/users/:id/avatar", async function (req, res) {
 
 - PATCH
 
-How to use:
-Use the URL: {{url}}/users/me
-Ensure sufficient authorization. Make sure the request body contains the following (all optional)
+Use the URL: `{{url}}/users/me`
 
-```json
+Ensure that an authorization header is sent with the appropriate Bearer token.
+
+```JSON
 {
-    username: ...
-    passowrd: ...
-    email: ...
+    "username": "...",
+    "password": "...",
+    "email": "..."
 }
 ```
 
@@ -784,9 +783,9 @@ userRouter.patch("/users/me", authMiddle, async function (req, res) {
 
 - DELETE
 
-How to use:
-Use the URL: {{url}}/users/me
-Ensure sufficient authorization
+Use the URL: `{{url}}/users/me`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
 
 ```javascript
 userRouter.delete("/users/me", authMiddle, async function (req, res) {
@@ -800,9 +799,9 @@ userRouter.delete("/users/me", authMiddle, async function (req, res) {
 });
 ```
 
-How to use:
-Use the URL: {{url}}/users/me/avatar
-Ensure sufficient authorization
+Use the URL: `{{url}}/users/me/avatar`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
 
 ```javascript
 userRouter.delete("/users/me/avatar", authMiddle, async function (req, res) {
@@ -817,7 +816,7 @@ userRouter.delete("/users/me/avatar", authMiddle, async function (req, res) {
 });
 ```
 
-Again, make sure to export the userRouter
+Again, make sure to export the userRouter.
 
 (vii) Take in the routers and enable them to be used by the server:
 
@@ -839,10 +838,7 @@ app.use(tweetRouter);
 export default app;
 ```
 
-The sever is not equipped in theory. We proceed to use a software like postman
-to test every route and report any possible errors:
-
-No errors were found. All routes work as expected.
+The sever is now equipped in theory.
 
 ---
 
@@ -861,7 +857,7 @@ Then connect to your instance using the NodeJS MongoDB driver ; since the
 project uses mongoose (which has it's own implementation of the native
 MongoDB driver), we only need the URI to replace in the `.env` file:
 
-```env
+```bash
 mongodb+srv://Cross:<password>@x-api.6qbwngu.mongodb.net/?retryWrites=true&w=majority
 ```
 
