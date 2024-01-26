@@ -871,3 +871,145 @@ You can view your collections as shown below:
 
 ![Successfully created tweet](./img/atlas_success.png)
 ![Successfully created image](./img/atlas_success_2.png)
+
+(2) Hosting the API as a web-service
+
+Use a provider like `Heroku` or `Render` to host the API
+as a web service. The reason for this decentralization is
+two fold:
+
+- (i) Since front-end development is not an ultimate priority,hosting the back-end
+and the front-end separately ensures
+that each service is reusable: Personally, I can reuse the
+front-end for another rewrite or upgrade of the API
+
+- (ii) During development, hosting the http-server and the
+back-end locally (on `localhost:XXXX`) will lead to
+Cross-origin resource sharing (CORS) blocks. We can develop
+the front-end locally by making it interact with the
+service that is locally hosted.
+
+This API was hosted on [Render](https://x-api-3g2k.onrender.com)
+
+(3) Install http-server as a dev dependency:
+
+```bash
+yarn add --dev http-server 
+```
+
+Create necessary scripts to separately run this service
+(view the repository's `package.json` for the same)
+
+(4) Create the following in a `public/` folder:
+
+- `css/` (For the stylesheets)
+- `fonts/` (For the monospace font that will be used in the webpage)
+- `img/` (For storing any static images)
+- `js/` (For the client side scripts)
+- `templates` (For the HTML templates corresponding to the
+websites available routes [except `index.html`])
+- `index.html` (Start point for the server)
+
+(5) Move a custom `.ttf` font into the `fonts/` directory
+
+Make a corresponding stylesheet in `css/fontSet.css`
+
+```css
+@font-face {
+  font-family: "JuliaMono";
+  src: url("../font/JuliaMono-Regular.ttf") format("truetype");
+}
+
+* {
+  font-family: "JuliaMono", sans-serif;
+}
+```
+
+(6) Write the `index` page
+
+`index.html` is the first page that the user sees at `/`,
+and is also correspondingly the only page that any
+`http-server` is usually able to access.
+
+The following code will suffice for our design:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/fontSet.css">
+    <link rel="stylesheet" href="css/index.css">
+    <title>X-API Demo</title>
+  </head>
+  <body>
+    <header>
+      <h1>X-API Demo</h1>
+      <div class="buttons-container">
+        <button id="signin-btn">Sign In</button>
+        <button id="login-btn">Log In</button>
+        <button id="google-btn">WIP</button>
+      </div>
+    </header>
+    <div id="tweets-container"></div>
+    <div id="message-container"></div>
+    <script src="js/index.js"></script>
+  </body>
+</html>
+```
+
+The `id` attribute allows us to target them for further
+customization with a CSS stylesheet (`css/index.css`)
+
+The containers will be filled with out script in `js/index.js`
+
+First the CSS can be updated as:
+
+```css
+body {
+  margin: 20px;
+}
+
+header {
+  text-align: center;
+}
+
+h1 {
+  color: #161616;
+}
+
+.buttons-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.tweet-box {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+.tweet-author {
+  font-weight: bold;
+}
+
+.tweet-date {
+  color: #777;
+}
+
+button {
+  margin-right: 10px;
+  color: white;
+  background-color: black;
+}
+```
+
+and in `js/index.js`
+
+```javascript
+
+```

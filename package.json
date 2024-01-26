@@ -4,7 +4,7 @@
   "packageManager": "yarn@4.0.2",
   "description": "A clone of X's API, scaled down",
   "author": "Cross",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "type": "module",
   "scripts": {
