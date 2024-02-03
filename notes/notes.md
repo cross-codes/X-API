@@ -884,10 +884,10 @@ that each service is reusable: Personally, I can reuse the
 front-end for another rewrite or upgrade of the API
 
 - (ii) During development, hosting the http-server and the
-back-end locally (on `localhost:XXXX`) will lead to
+back-end (on `localhost:XXXX`) will lead to
 Cross-origin resource sharing (CORS) blocks. We can develop
 the front-end locally by making it interact with the
-service that is locally hosted.
+service that already hosted.
 
 This API was hosted on [Render](https://x-api-3g2k.onrender.com)
 
@@ -1059,10 +1059,13 @@ document.getElementById("login-btn").addEventListener("click", function() {
 
 We want to ensure that we don't bump into CORS when in development. This is
 because the URL is in a different domain
-from localhost:8080. Make this change in `src/app.js`
+from localhost:8080.
+
+Install the cors library and add these lines
 
 ```javascript
 import express from "express";
+import cors from "cors";
 
 import "./db/connection.js";
 import tweetRouter from "./routers/tweet.router.js";
@@ -1070,12 +1073,7 @@ import userRouter from "./routers/user.router.js";
 
 const app = express();
 
-app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "http://localhost:8080");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  next();
-});
+app.use(cors());
 
 app.use(express.json());
 app.use(userRouter);
@@ -1252,3 +1250,7 @@ dashboard css
 dashboard js
 
 update html
+update css
+update js
+
+
