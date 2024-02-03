@@ -12,10 +12,10 @@ document.getElementById("login-form").addEventListener("submit", async function(
 
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  profileOpts.body = JSON.stringify({ username, password });
+  opts.body = JSON.stringify({ username, password });
 
   try {
-    const response = await fetch(url + route, profileOpts);
+    const response = await fetch(url + route, opts);
     const data = await response.json();
     if (response.ok) {
       console.log("Logged in successfully", data);

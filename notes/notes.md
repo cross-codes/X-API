@@ -1073,7 +1073,7 @@ const app = express();
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:8080");
   res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   next();
 });
 
@@ -1221,7 +1221,7 @@ document.getElementById("login-form").addEventListener("submit", async function(
 We cannot test this out yet, because we need to design the redirect page
 `dashboard.html` to see it in action
 
-(8) Design the login redirect page:
+(8) Design the login redirect page (Dashboard):
 
 ```html
 <!DOCTYPE html>
@@ -1247,3 +1247,8 @@ We cannot test this out yet, because we need to design the redirect page
   </body>
 </html>
 ```
+
+dashboard css
+dashboard js
+
+update html
