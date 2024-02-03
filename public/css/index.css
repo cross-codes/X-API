@@ -1,0 +1,38 @@
+body {
+  margin: 20px;
+}
+
+header {
+  text-align: center;
+}
+
+h1 {
+  color: #161616;
+}
+
+.buttons-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.tweet-box {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+.tweet-author {
+  font-weight: bold;
+}
+
+.tweet-date {
+  color: #777;
+}
+
+button {
+  margin-right: 10px;
+  color: white;
+  background-color: black;
+}

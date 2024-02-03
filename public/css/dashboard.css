@@ -1,0 +1,71 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  box-sizing: border-box;
+}
+
+header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  color: #1da1f2;
+  margin-bottom: 10px;
+}
+
+.post-button {
+  order: -1;
+}
+
+.post-button,
+.logout-button,
+.profile-button {
+  width: 30%;
+  margin: 0 35%;
+  margin-top: 10px;
+  box-sizing: border-box;
+  background-color: #161616;
+  color: white;
+}
+
+.tweet-box {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+  position: relative;
+}
+
+.tweet-author {
+  font-weight: bold;
+}
+
+.tweet-date {
+  color: #777;
+}
+
+.update-button,
+.delete-button {
+  position: absolute;
+  top: 10px;
+  background-color: black;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.update-button {
+  right: 70px;
+  background-color: green;
+}
+
+.delete-button {
+  right: 10px;
+  background-color: red;
+}

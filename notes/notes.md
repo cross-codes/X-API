@@ -948,7 +948,7 @@ The following code will suffice for our design:
     <header>
       <h1>X-API Demo</h1>
       <div class="buttons-container">
-        <button id="signin-btn">Sign In</button>
+        <button id="signin-btn">Sign Up</button>
         <button id="login-btn">Log In</button>
         <button id="google-btn">WIP</button>
       </div>
@@ -1011,5 +1011,239 @@ button {
 and in `js/index.js`
 
 ```javascript
+const url = "https://x-api-3g2k.onrender.com";
+const route = "/tweets";
+const opts = {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+  },
+};
 
+async function renderTweets() {
+  try {
+    const response = await fetch(url + route, opts);
+    const tweets = await response.json();
+    console.log(tweets);
+    const tweetsContainer = document.getElementById("tweets-container");
+    tweetsContainer.innerHTML = "";
+
+    tweets.forEach(function(tweet) {
+      const tweetElement = document.createElement("div");
+      tweetElement.classList.add("tweet-box");
+
+      tweetElement.innerHTML = `
+        <p class="tweet-author"><strong>${tweet.username}</strong></p>
+        <p>${tweet.content}</p>
+        <p class="tweet-date">${tweet.updatedAt}</p>
+      `;
+      tweetsContainer.appendChild(tweetElement);
+    });
+  } catch (e) {
+    console.error("Error fetching tweets: " + e.message);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", renderTweets());
+
+document.getElementById("signin-btn").addEventListener("click", function() {
+  window.location.href = "templates/signin.html";
+});
+
+document.getElementById("login-btn").addEventListener("click", function() {
+  window.location.href = "templates/login.html";
+});
+
+// Extra code for the OAuth will be put here
+```
+
+We want to ensure that we don't bump into CORS when in development. This is
+because the URL is in a different domain
+from localhost:8080. Make this change in `src/app.js`
+
+```javascript
+import express from "express";
+
+import "./db/connection.js";
+import tweetRouter from "./routers/tweet.router.js";
+import userRouter from "./routers/user.router.js";
+
+const app = express();
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "http://localhost:8080");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+app.use(express.json());
+app.use(userRouter);
+app.use(tweetRouter);
+
+export default app;
+```
+
+The first page should now be loadable.
+
+Since we already have a user from the testing, let us
+try to make the log in page
+
+(7) Write the login page
+
+Under templates, create a `login.html`. Create
+corresponding `login.css` and `login.js` files
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/fontSet.css">
+    <link rel="stylesheet" href="../css/login.css">
+    <title>X-API Demo</title>
+  </head>
+  <body>
+    <div class="login-container">
+      <h1>Login</h1>
+      <form id="login-form">
+        <label for="username">Username:</label>
+        <input type="username" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div id="error-message"></div>
+    </div>
+    <script src="../js/login.js"></script>
+  </body>
+</html>
+```
+
+```css
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-container {
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+form {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box; /* Include padding and border in the width */
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #161616;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  form {
+    max-width: none;
+  }
+}
+```
+
+```javascript
+const url = "https://x-api-3g2k.onrender.com";
+const route = "/users/login";
+const opts = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+};
+
+document.getElementById("login-form").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  opts.body = JSON.stringify({ username, password });
+
+  try {
+    const response = await fetch(url + route, opts);
+    const data = await response.json();
+    if (response.ok) {
+      console.log("Logged in successfully", data);
+      localStorage.setItem("authToken", data.token);
+      window.location.href = "../templates/dashboard.html";
+    } else {
+      console.error("Login failed: ", data.message);
+      const errorMsgContainer = document.getElementById("error-message");
+      errorMsgContainer.textContent = data.message;
+      errorMsgContainer.style.color = "red";
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+    }
+  } catch (e) {
+    console.error("Error during login: ", error.message);
+  }
+});
+```
+
+We cannot test this out yet, because we need to design the redirect page
+`dashboard.html` to see it in action
+
+(8) Design the login redirect page:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/fontSet.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <title>X-API Demo</title>
+  </head>
+  <body>
+    <header>
+      <h1>X-API Dashboard</h1>
+      <div id="welcome-message"></div>
+      <button id="profile-button" class="profile-button">Profile</button>
+      <button id="logout-button" class="logout-button">Sign out</button>
+    </header>
+    <button id="post-button" class="post-button">Post</button>
+    <div id="tweets-container"></div>
+    <script src="../js/dashboard.js"></script>
+  </body>
+</html>
 ```
