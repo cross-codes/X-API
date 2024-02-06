@@ -1,0 +1,43 @@
+body {
+  margin: 20px;
+}
+
+header {
+  text-align: center;
+}
+
+h1 {
+  color: #161616;
+}
+
+#post-form {
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+}
+
+#post-tweet-button {
+  background-color: #161616;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#post-tweet-button:hover {
+  background-color: #0d8ef9;
+}

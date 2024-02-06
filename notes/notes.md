@@ -21,7 +21,6 @@ Build an X Clone (scaled down):
 
   - Tweets should be editable by the users that made them
   - Every tweet should be viewable by everybody else
-  - OAuth should be implemented (new)
 
 ---
 
@@ -1246,11 +1245,580 @@ We cannot test this out yet, because we need to design the redirect page
 </html>
 ```
 
-dashboard css
-dashboard js
+```css
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  box-sizing: border-box;
+}
 
-update html
-update css
-update js
+header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+h1 {
+  color: #1da1f2;
+  margin-bottom: 10px;
+}
 
+.post-button {
+  order: -1;
+}
+
+.post-button,
+.logout-button,
+.profile-button {
+  width: 30%;
+  margin: 0 35%;
+  margin-top: 10px;
+  box-sizing: border-box;
+  background-color: #161616;
+  color: white;
+}
+
+.tweet-box {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+  position: relative;
+}
+
+.tweet-author {
+  font-weight: bold;
+}
+
+.tweet-date {
+  color: #777;
+}
+
+.update-button,
+.delete-button {
+  position: absolute;
+  top: 10px;
+  background-color: black;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.update-button {
+  right: 70px;
+  background-color: green;
+}
+
+.delete-button {
+  right: 10px;
+  background-color: red;
+}
+```
+
+```js
+const url = "https://x-api-3g2k.onrender.com";
+const profileRoute = "/users/me";
+const profileOpts = {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+  },
+};
+
+async function getUsername() {
+  try {
+    const response = await fetch(url + profileRoute, profileOpts);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      return data.username;
+    } else {
+      console.error("Error fetching username", response.statusText);
+    }
+  } catch (e) {
+    console.error("Error fetching username: ", e.message);
+  }
+}
+
+const renderRoute = "/tweets";
+const renderOpts = {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+  },
+};
+
+const deleteRoute = "/tweets/";
+const deleteOpts = {
+  method: "DELETE",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+  },
+};
+
+async function deleteTweet(tweetId) {
+  try {
+    const response = await fetch(url + deleteRoute + `${tweetId}`, deleteOpts);
+    if (response.ok) {
+      await renderTweetsAndWelcome();
+    } else {
+      console.error("Error deleting tweet: ", response.statusText);
+    }
+  } catch (e) {
+    console.error("Error deleting tweet: ", e.message);
+  }
+}
+
+function updateRedirect(tweetId) {
+  localStorage.setItem("tweetID", tweetId);
+  window.location.href = "../templates/update.html";
+}
+
+async function deleteRedirect(tweetId) {
+  const confirmation = window.confirm("Do you really want to delete the tweet");
+  if (confirmation) {
+    await deleteTweet(tweetId);
+  } else {
+    console.log("Deletion aborted");
+  }
+}
+
+async function renderTweetsAndWelcome() {
+  try {
+    const response = await fetch(url + renderRoute, renderOpts);
+    const tweets = await response.json();
+    console.log(tweets);
+    const tweetsContainer = document.getElementById("tweets-container");
+    tweetsContainer.innerHTML = "";
+
+    tweets.forEach(async function(tweet) {
+      const tweetElement = document.createElement("div");
+      tweetElement.classList.add("tweet-box");
+      const isAuthor = tweet.username === await getUsername();
+
+      tweetElement.innerHTML = `
+        <p class="tweet-author"><strong>${tweet.username}</strong></p>
+        <p>${tweet.content}</p>
+        <p class="tweet-date">${tweet.updatedAt}</p>
+        ${isAuthor ? `<button class="update-button" onclick="updateRedirect('${tweet._id}')">Update</button>` : ""}
+        ${isAuthor ? `<button class="delete-button" onclick="deleteRedirect('${tweet._id}')">Delete</button>` : ""}
+      `;
+      tweetsContainer.appendChild(tweetElement);
+    });
+
+    const welcomeMessage = document.getElementById("welcome-message");
+    const username = await getUsername();
+    welcomeMessage.textContent = `Welcome ${username}`;
+  } catch (e) {
+    console.error("Error fetching tweets: " + e.message);
+  }
+}
+
+const logoutRoute = "/users/logout";
+const logoutOpts = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+  },
+};
+
+async function logout() {
+  try {
+    const response = await fetch(url + logoutRoute, logoutOpts);
+    if (response.ok) {
+      window.location.href = "../index.html";
+    } else {
+      console.error("Error logging out: ", response.statusText);
+    }
+  } catch (e) {
+    console.error("Error logging out: ", e.message);
+  }
+}
+
+document.getElementById("post-button").addEventListener("click", function() {
+  console.log("Post button clicked");
+  window.location.href = "../templates/post.html";
+});
+
+document.getElementById("logout-button").addEventListener("click", async function() {
+  console.log("Logout button clicked");
+  const confirmation = window.confirm("Do you really want to logout");
+  if (confirmation) {
+    await logout();
+  } else {
+    console.log("Logout aborted");
+  }
+});
+
+document.addEventListener("DOMContentLoaded", async function() {
+  await renderTweetsAndWelcome();
+});
+```
+
+(9) Design the form updation page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/fontSet.css">
+    <link rel="stylesheet" href="../css/update.css">
+    <title>X-API Demo</title>
+  </head>
+  <body>
+    <header>
+      <h1>Update tweet</h1>
+    </header>
+    <form id ="update-form">
+      <label for="tweet-content">Tweet Content:</label>
+      <textarea id="tweet-content" rows="4" cols="50"></textarea>
+      <button type="submit" id="update-tweet-button">Update</button>
+    </form>
+    <script src="../js/update.js"></script>
+  </body>
+</html>
+```
+
+```css
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+header {
+  text-align: center;
+}
+
+h1 {
+  color: #161616;
+}
+
+#update-form {
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+}
+
+#update-tweet-button {
+  background-color: #161616;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#update-tweet-button:hover {
+  background-color: #0d8ef9;
+}
+```
+
+```js
+const url = "https://x-api-3g2k.onrender.com";
+const tweetRoute = "/tweets/";
+const tweetOpts = {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+  },
+};
+
+document.addEventListener("DOMContentLoaded", async function() {
+  try {
+    const response = await fetch(url + tweetRoute + `${localStorage.getItem("tweetID")}`, tweetOpts);
+    if (response.ok) {
+      const tweet = await response.json();
+      const tweetContent = tweet.content;
+
+      document.getElementById("tweet-content").value = tweetContent;
+    } else {
+      console.error("Error fetching original tweet: ", response.statusText);
+    }
+  } catch (e) {
+    console.error("Error fetching original tweet: ", e.message);
+  }
+});
+
+const updateRoute = "/tweets/";
+const updateOpts = {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+  },
+};
+
+document.getElementById("update-form").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const tweetContent = document.getElementById("tweet-content").value;
+  updateOpts.body = JSON.stringify({ content: tweetContent });
+
+  try {
+    const response = await fetch(url + updateRoute + `${localStorage.getItem("tweetID")}`, updateOpts);
+
+    if (response.ok) {
+      window.location.href = "../templates/dashboard.html";
+    } else {
+      console.error("Error updating tweet: ", response.statusText);
+    }
+  } catch (e) {
+    console.error("Error updating tweet: ", e.message);
+  }
+});
+```
+
+(10) Design the post tweet page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/fontSet.css">
+    <link rel="stylesheet" href="../css/post.css">
+    <title>X-API Demo</title>
+  </head>
+  <body>
+    <header>
+      <h1>Post Tweet</h1>
+    </header>
+    <form id="post-form">
+      <label for="tweet-content">Tweet Content:</label>
+      <textarea id="tweet-content" rows="4" cols="50"></textarea>
+      <button type="submit" id="post-tweet-button">Post</button>
+    </form>
+    <script src="../js/post.js"></script>
+  </body>
+</html>
+```
+
+```css
+body {
+  margin: 20px;
+}
+
+header {
+  text-align: center;
+}
+
+h1 {
+  color: #161616;
+}
+
+#post-form {
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+}
+
+#post-tweet-button {
+  background-color: #161616;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#post-tweet-button:hover {
+  background-color: #0d8ef9;
+}
+```
+
+```js
+const url = "https://x-api-3g2k.onrender.com";
+const route = "/tweets";
+const opts = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+  },
+};
+
+document.getElementById("post-form").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const tweetContent = document.getElementById("tweet-content").value;
+  opts.body = JSON.stringify({ content: tweetContent });
+
+  try {
+    const response = await fetch(url + route, opts);
+    console.log(response);
+
+    if (response.ok) {
+      window.location.href = "../templates/dashboard.html";
+    } else {
+      console.error("Error posting tweet: ", response.statusText);
+    }
+  } catch (e) {
+    console.error("Error posting tweet: ", e.message);
+  }
+});
+```
+
+(11) Lastly, create the user creation page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/fontSet.css">
+    <link rel="stylesheet" href="../css/signup.css">
+    <title>X-API Demo</title>
+  </head>
+  <body>
+    <div class="signin=container">
+      <h1>Sign Up</h1>
+      <form id="signup-form">
+        <label for="userName">Username:</label>
+        <input type="userName" id="userName" name="userName" required>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Sign Up</button>
+      </form>
+      <div id="error-message"></div>
+    </div>
+    <script src="../js/signup.js"></script>
+  </body>
+</html>
+```
+
+```css
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.signup-container {
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+form {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #1da1f2;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  form {
+    max-width: none;
+  }
+}
+```
+
+```js
+const url = "https://x-api-3g2k.onrender.com";
+const route = "/users";
+const opts = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+};
+
+document.getElementById("signup-form").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const username = document.getElementById("userName").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  opts.body = JSON.stringify({ username, password, email });
+
+  try {
+    const response = await fetch(url + route, opts);
+    const data = await response.json();
+
+    if (response.ok) {
+      localStorage.setItem("authToken", data.token);
+      window.location.href = "../templates/dashboard.html";
+    } else {
+      console.error(data.message);
+    }
+  } catch (e) {
+    console.error("Error during signin: ", e.message);
+  }
+});
+```

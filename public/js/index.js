@@ -34,7 +34,7 @@ async function renderTweets() {
 document.addEventListener("DOMContentLoaded", renderTweets());
 
 document.getElementById("signin-btn").addEventListener("click", function() {
-  window.location.href = "../templates/signin.html";
+  window.location.href = "../templates/signup.html";
 });
 
 document.getElementById("login-btn").addEventListener("click", function() {

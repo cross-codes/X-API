@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "serverDev": "node --watch src/index.js",
-    "websiteDev": "http-server"
+    "websiteDev": "http-server --cors"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

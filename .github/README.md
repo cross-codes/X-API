@@ -5,12 +5,22 @@ An API for managing several users and their tweets
 
 Current version : 1.0
 
+For a brief overview on the process of creating the API, check out
+`📁notes/notes.md`
+
 </div>
 
 ---
 
-For a brief overview on the process of creating the API, check out
-`📁notes/notes.md`
+# Hosted locations
+
+The API is hosted as a webservice at [`https://x-api-3g2k.onrender.com`](https://x-api-3g2k.onrender.com).
+
+The `📁notes/notes.md` file contains documentation on the working of each route under
+this URL.
+
+A simple website demonstrating some of the features of the APIis hosted as a
+separate web service decentrally.
 
 # Usage
 
