@@ -85,6 +85,21 @@ The contents of the database can by accessed using
 the MongoShell, which can be accessed via the terminal (in the case of
 a docker container, first `exec` the container and use the `mongo` command)
 
+### Developing the front-end service
+
+Although the front-end is a highly minimal piece of work, it consists of simple
+`html`, `css` and `js` scripts. In order to locally run the front-end service,
+use the following command:
+
+```bash
+yarn run websiteDev
+```
+
+To disable CORS, you may want to add the localhost port into origins specified
+on `src/app.js`. Furthermore, all the
+JS scripts use `node-fetch`, on a specified URL where the API is assumed to be
+hosted. CHANGE the value of `url` on all files if you intend to use another API URL.
+
 ---
 
 Project started on: 24/12/2023
