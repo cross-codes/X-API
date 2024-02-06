@@ -6,7 +6,7 @@ import tweetRouter from "./routers/tweet.router.js";
 import userRouter from "./routers/user.router.js";
 
 const corsOpts = {
-  origin: "http://localhost:8080",
+  origin: ["http://localhost:8080", "https://x-api-demo-website.onrender.com"],
 };
 
 const app = express();
