@@ -1829,3 +1829,359 @@ document.getElementById("signup-form").addEventListener("submit", async function
   }
 });
 ```
+
+---
+
+### Implementing OAuth
+
+---
+
+### Adding comments to the app
+
+We want to now modify our schema for the tweet, to enable adding comments.
+
+The process of updation will be done as follows:
+
+(1) Update the tweet schema to include comments:
+
+We only want to add a content, author and time attribute ; the new tweet schema will then become
+
+```javascript
+const tweetSchema = new mongoose.Schema(
+  {
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    username: {
+      type: String,
+      required: true,
+      ref: "User",
+    },
+    content: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    pictures: [
+      {
+        type: String,
+        trim: true,
+        required: false,
+      },
+    ],
+    videos: [
+      {
+        type: String,
+        trim: true,
+        required: false,
+      },
+    ],
+    comments: [
+      {
+        content: {
+          type: String,
+          required: true,
+        },
+        author: {
+          type: String,
+          required: true,
+          ref: "User",
+        },
+        datetime: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  },
+  { timestamps: true },
+)
+```
+
+(2) Next, we want to see how adding a comment looks like. We first update
+the POST route.
+
+Under `{{url}}/tweets/:tweetId/comments`, send a request body with the following content,
+after sufficient authorization
+
+```JSON
+{
+    "content": "...",
+}
+```
+
+```javascript
+tweetRouter.post("/tweets/:tweetId/comments", authMiddle, async function(req, res) {
+  try {
+    const tweet = await Tweet.findById(req.params.tweetId);
+    if (!tweet) {
+      res.status(404).send({ error: "Requested tweet not found" });
+    }
+    const user = await User.findById(req.user._id);
+    tweet.comments.push({
+      content: req.body.content,
+      author: user.username,
+      datetime: Date.now(),
+    });
+    await tweet.save();
+    res.status(200).send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+(3) Next, we want to add a comments route to see the comments under a particular
+tweet. This should not need any authorization.
+
+Use the URL: `{{url}}/tweets/:tweetId/comments?sortByOrder={}&limit={}&skip={}`
+
+```javascript
+tweetRouter.get("/tweets/:tweetId/comments", async function(req, res) {
+  const _id = req.params.tweetId;
+
+  try {
+    const tweet = await Tweet.findOne({ _id });
+    if (!tweet) {
+      return res.status(404).send({ error: "Tweet not found" });
+    }
+
+    const sortOrder = req.params.sortByOrder === "desc" ? -1 : 1;
+    const commentsArray = tweet.comments.sort(function(a, b) {
+      if (sortOrder === 1) {
+        return a.datetime - b.datetime;
+      } else {
+        return b.datetime - a.datetime;
+      }
+    });
+    const sentArray = [];
+
+    let limit = parseInt(req.query.limit) || 10;
+    const skip = parseInt(req.query.skip) || 0;
+
+    if (limit > commentsArray.length) {
+      limit = commentsArray.length;
+    }
+
+    for (let i = skip; i < limit; i++) {
+      sentArray[i] = commentsArray[i];
+    }
+    res.status(200).send(sentArray);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+(4) Deleting a comment should be the last task before we attempt the task of updation
+
+Use the URL `{{url}}/tweets/:tweetId/comments/:commentId` and ensure sufficient authorization
+
+```javascript
+tweetRouter.delete("/tweets/:tweetId/comments/:commentId", authMiddle, async function(req, res) {
+  try {
+    const _tweetId = req.params.tweetId;
+    const tweet = await Tweet.findOne({ _id: _tweetId });
+
+    if (!tweet) {
+      res.status(404).send({ error: "Tweet not found" });
+    }
+
+    if (tweet.author.toString() !== req.user._id.toString()) {
+      throw new Error();
+    }
+
+    const commentsArray = tweet.comments;
+    const _commentId = req.params.commentId;
+    const commentIndex = commentsArray.findIndex(function(comment) {
+      return comment._id.toString() === _commentId;
+    });
+    console.log(commentIndex);
+
+    if (commentIndex === -1) {
+      res.status(404).send({ error: "Comment not found" });
+    }
+
+    tweet.comments.splice(commentIndex, 1);
+
+    await tweet.save();
+    res.status(200).send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+(5) Now we modify add a new PATCH route to edit a comment
+
+Use the URL: `{{url}}/tweets/:tweetId/comments/:commentId`
+
+Ensure that an authorization header is sent with the appropriate Bearer token.
+Your request body should look like:
+
+```JSON
+{
+    "content": "...",
+}
+```
+
+```javascript
+tweetRouter.patch("/tweets/:tweetId/comments/:commentId", authMiddle, async function(req, res) {
+  try {
+    const tweet = await Tweet.findOne({ _id: req.params.tweetId });
+
+    if (!tweet) {
+      res.status(404).send({ error: "Tweet not found" });
+    }
+
+    if (tweet.author.toString() !== req.user._id.toString()) {
+      throw new Error();
+    }
+
+    const commentsArray = tweet.comments;
+    const _commentId = req.params.commentId;
+    const commentIndex = commentsArray.findIndex(function(comment) {
+      return comment._id.toString() === _commentId;
+    });
+    console.log(commentIndex);
+
+    if (commentIndex === -1) {
+      res.status(404).send({ error: "Comment not found" });
+    }
+
+    const comment = tweet.comments[commentIndex];
+    comment.content = req.body.content;
+    await tweet.save();
+    res.status(200).send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+
+```
+
+(6) The hidden thing to change is to update the attributes of a
+comment when a user changes their username
+
+Unfortunately, the process of manually scouring through every comment is painfully inefficient, so
+we solve this problem by modifying our tweet model first:
+
+For the comments, add an author attribute:
+
+```javascript
+const tweetSchema = new mongoose.Schema(
+  {
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    username: {
+      type: String,
+      required: true,
+      ref: "User",
+    },
+    content: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    pictures: [
+      {
+        type: String,
+        trim: true,
+        required: false,
+      },
+    ],
+    videos: [
+      {
+        type: String,
+        trim: true,
+        required: false,
+      },
+    ],
+    comments: [
+      {
+        author: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: "User",
+        },
+        content: {
+          type: String,
+          required: true,
+        },
+        username: {
+          type: String,
+          ref: "User",
+          required: true,
+        },
+        datetime: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  },
+  { timestamps: true },
+);
+```
+
+and now, update the POST request (ref (2)):
+
+```javascript
+tweetRouter.post("/tweets/:tweetId/comments", authMiddle, async function(req, res) {
+  try {
+    const tweet = await Tweet.findById(req.params.tweetId);
+    if (!tweet) {
+      res.status(404).send({ error: "Requested tweet not found" });
+    }
+    const user = await User.findById(req.user._id);
+    tweet.comments.push({
+      author: req.user._id,
+      content: req.body.content,
+      username: user.username,
+      datetime: Date.now(),
+    });
+    await tweet.save();
+    res.status(200).send(tweet);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send({ error: "Internal server error" });
+  }
+});
+```
+
+To solve this problem, we will add a pre-event hook to "save" on the user:
+
+```javascript
+userSchema.pre("save", async function(next) {
+  if (this.isModified("username")) {
+    await Tweet.updateMany(
+      { "comments.author": this._id },
+      { $set: { "comments.$[elem].username": this.username } },
+      { arrayFilters: [{ "elem.author": this._id }] },
+    );
+    next();
+  }
+});
+```
+
+As a matter of fact, we can use this pre-save hook method to update tweets on updating a username too
+
+```javascript
+userSchema.pre("save", async function(next) {
+  if (this.isModified("username")) {
+    await Tweet.updateMany({ author: this._id }, { $set: { username: this.username } });
+    next();
+  }
+});
+```
+
+Remove the manual array travsersal method in the PATCH route for tweets.

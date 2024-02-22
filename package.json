@@ -1,7 +1,7 @@
 {
   "name": "X-API",
   "version": "1.0.0",
-  "packageManager": "yarn@4.0.2",
+  "packageManager": "yarn@4.1.0",
   "description": "A clone of X's API, scaled down",
   "author": "Cross",
   "license": "MIT",

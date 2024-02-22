@@ -1,6 +1,5 @@
 import express from "express";
 import authMiddle from "../middleware/auth.js";
-import Tweet from "../models/tweet.model.js";
 import User from "../models/user.model.js";
 
 const userRouter = new express.Router();
@@ -122,7 +121,7 @@ userRouter.get("/users/:id/avatar", async function(req, res) {
 
 /**
  * Update valid fields in a user model
- * Must also update all the users associated tweets
+ * Must also update all the users associated tweets and comments
  */
 
 // Status: Working as intended
@@ -141,15 +140,6 @@ userRouter.patch("/users/me", authMiddle, async function(req, res) {
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).send({ error: "User not found" });
-    }
-
-    // Modify tweets if the username changes
-    if (updates.includes("username")) {
-      const tweets = await Tweet.find({ author: req.user._id });
-      tweets.forEach(async function(tweet) {
-        tweet.username = req.body.username;
-        await tweet.save();
-      });
     }
 
     updates.forEach(function(update) {

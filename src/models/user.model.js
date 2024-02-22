@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import validator from "validator";
+import Tweet from "./tweet.model.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -59,13 +60,32 @@ userSchema.pre("save", async function(next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 8); // Store hashed passwords in the DB on modification or new creation
   }
-  next();
 });
 
 // (2) Cascade tweets before event "delete"
 userSchema.pre("remove", async function(next) {
   await Tweet.deleteMany({ author: this._id });
   next();
+});
+
+// (3) Update tweets if the username is updated
+userSchema.pre("save", async function(next) {
+  if (this.isModified("username")) {
+    await Tweet.updateMany({ author: this._id }, { $set: { username: this.username } });
+    next();
+  }
+});
+
+// (4) Update comments if the username is updated
+userSchema.pre("save", async function(next) {
+  if (this.isModified("username")) {
+    await Tweet.updateMany(
+      { "comments.author": this._id },
+      { $set: { "comments.$[elem].username": this.username } },
+      { arrayFilters: [{ "elem.author": this._id }] },
+    );
+    next();
+  }
 });
 
 // Virtuals
