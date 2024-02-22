@@ -70,7 +70,7 @@ JWT_SECRET=generateAuth
 MONGODB_URL=mongodb://0.0.0.0:27017/x-api
 ```
 
-Once your server is up and running, you can use the following command:
+Use the following command:
 
 ```bash
 yarn run serverDev
