@@ -21,6 +21,7 @@
     "validator": "^13.11.0"
   },
   "devDependencies": {
+    "eslint": "^8.57.0",
     "http-server": "^14.1.1"
   }
 }
